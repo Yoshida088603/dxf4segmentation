@@ -4,6 +4,8 @@
 
 - `.sim` ファイルをドラッグ＆ドロップでアップロードし、オフセット計算後 `.dxf` ファイルとしてダウンロードできるWebツール
 - GitHub Pagesで公開可能なシンプル構成
+- 元ポリゴン（center.dxf）、内側5mmオフセット（inter.dxf）、外側5mmオフセット（outer.dxf）の3種類のDXFを自動出力
+- SIMA→DXF変換時はXY座標を反転（SIMAのX→DXFのY、SIMAのY→DXFのX）
 
 ## ディレクトリ構成
 
@@ -22,7 +24,7 @@
 1. GitHub Pagesで本リポジトリを公開
 2. ブラウザで `index.html` を開く
 3. `.sim` ファイルをドラッグ＆ドロップ
-4. オフセット計算後、`.dxf` ファイルが自動でダウンロードされます
+4. オフセット計算後、`center.dxf`・`inter.dxf`・`outer.dxf` の3ファイルが自動でダウンロードされます
 
 ---
 
