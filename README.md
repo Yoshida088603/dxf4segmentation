@@ -7,6 +7,18 @@
 - 元ポリゴン（center.dxf）、内側5mmオフセット（inter.dxf）、外側5mmオフセット（outer.dxf）の3種類のDXFを自動出力
 - SIMA→DXF変換時はXY座標を反転（SIMAのX→DXFのY、SIMAのY→DXFのX）
 
+## 処理フロー（図解）
+
+```mermaid
+flowchart TD
+    A[.simファイルをドラッグ＆ドロップ] --> B[.simをパースしてポリゴン座標配列に変換]
+    B --> C[元ポリゴン(center)をDXF出力]
+    B --> D[Clipper.jsで内外5mmオフセット計算]
+    D --> E[内側(inter)ポリゴンをDXF出力]
+    D --> F[外側(outer)ポリゴンをDXF出力]
+    C & E & F --> G[3種類のDXFを自動ダウンロード]
+```
+
 ## ディレクトリ構成
 
 ```
