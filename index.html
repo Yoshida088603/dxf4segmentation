@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DXF4Segmentation</title>
+  <style>
+    body { font-family: sans-serif; margin: 2em; }
+    #dropzone {
+      border: 2px dashed #888; padding: 2em; text-align: center; color: #888;
+      margin-bottom: 2em; cursor: pointer;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
+</head>
+<body>
+  <h1>DXF4Segmentation</h1>
+  <div id="dropzone">ここに .sim ファイルをドラッグ＆ドロップ</div>
+  <div id="result"></div>
+  <script>
+    function parseSim(text) {
+      // 点名→座標の辞書
+      const points = {};
+      // ポリゴンの点名順リスト
+      const order = [];
+      text.split(/\r?\n/).forEach(line => {
+        const cols = line.split(',').map(s => s.trim());
+        if (cols[0] === 'A01') {
+          points[cols[2]] = [parseFloat(cols[3]), parseFloat(cols[4])];
+        }
+        if (cols[0] === 'B01') {
+          order.push(cols[2]);
+        }
+      });
+      // ポリゴン座標列を返す
+      return order.map(pt => points[pt]).filter(Boolean);
+    }
+
+    // DXF出力時のみXY反転
+    function polygonToDxf(polygon, filename) {
+      let dxf = `0\nSECTION\n2\nENTITIES\n0\nPOLYLINE\n8\nlayer_polyline\n66\n1\n70\n1\n`;
+      polygon.forEach(([x, y]) => {
+        dxf += `0\nVERTEX\n8\n0\n10\n${y}\n20\n${x}\n30\n0.0\n70\n32\n`;
+      });
+      dxf += `0\nSEQEND\n0\nENDSEC\n0\nEOF\n`;
+      download(filename, dxf);
+    }
+
+    function download(filename, text) {
+      const blob = new Blob([text], { type: 'application/dxf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+    }
+
+    // オフセット量は5mm=0.005m
+    function offsetPolygon(polygon, offset_m) {
+      const scale = 1000000; // Clipper用スケール（精度重視）
+      const subj = polygon.map(([x, y]) => ({ X: Math.round(x * scale), Y: Math.round(y * scale) }));
+      const co = new ClipperLib.ClipperOffset();
+      co.AddPath(subj, ClipperLib.JoinType.jtMiter, ClipperLib.EndType.etClosedPolygon);
+      const solution = [];
+      co.Execute(solution, offset_m * scale);
+      return solution.length > 0 ? solution[0].map(pt => [pt.X / scale, pt.Y / scale]) : [];
+    }
+
+    document.getElementById('dropzone').addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    });
+    document.getElementById('dropzone').addEventListener('drop', async e => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      document.getElementById('result').textContent = `${file.name} を受け取りました`;
+      const text = await file.text();
+      const polygon = parseSim(text);
+      if (polygon.length < 3) {
+        document.getElementById('result').textContent += '\nポリゴンデータが不正です';
+        return;
+      }
+      // center（元ポリゴン、XY反転はDXF出力時のみ）
+      polygonToDxf(polygon, 'center.dxf');
+      // offset計算（5mm=0.005m）
+      const offset = 0.005;
+      // inter（内側）
+      const interPolygon = offsetPolygon(polygon, -offset);
+      if (interPolygon.length >= 3) polygonToDxf(interPolygon, 'inter.dxf');
+      // outer（外側）
+      const outerPolygon = offsetPolygon(polygon, offset);
+      if (outerPolygon.length >= 3) polygonToDxf(outerPolygon, 'outer.dxf');
+      document.getElementById('result').textContent += '\ncenter.dxf, inter.dxf, outer.dxf を出力しました（5mmオフセット・XY反転はDXF出力時のみ）';
+    });
+  </script>
+</body>
+</html> 
