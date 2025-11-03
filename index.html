@@ -88,8 +88,8 @@
       const baseName = getBaseName(file.name);
       // center（元ポリゴン、XY反転はDXF出力時のみ）
       polygonToDxf(polygon, `${baseName}_center.dxf`);
-      // offset計算（5mm=0.005m）
-      const offset = 0.005;
+      // offset計算（5mm=0.025m）
+      const offset = 0.025;
       // inter（内側）
       const interPolygon = offsetPolygon(polygon, -offset);
       if (interPolygon.length >= 3) polygonToDxf(interPolygon, `${baseName}_inter.dxf`);
